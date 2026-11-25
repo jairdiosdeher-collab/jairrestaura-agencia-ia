@@ -1,0 +1,8 @@
+{
+  "name": "JAIRRESTAURA AUTOMATIZA IA",
+  "description": "Plataforma integral de automatizaciones empresariales con inteligencia artificial, CRM de clientes, propuestas comerciales, motor propio verificable y cumplimiento Ley 1581 de 2012.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
