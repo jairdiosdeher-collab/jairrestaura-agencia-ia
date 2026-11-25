@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Clock, RefreshCw, Shield } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, RefreshCw, Send, Shield } from 'lucide-react';
 import { apiFetch, formatDateTime } from '../lib/api.ts';
 import type { ConnectorConfig, ConnectorKey, ExecutionLog } from '../types.ts';
 
@@ -68,6 +68,28 @@ export function EngineAndConnectors({
     }
   }
 
+  async function handleSendTelegramTest() {
+    setMsg(null);
+    setErr(null);
+    setBusyKey('telegram-test');
+    try {
+      const res = await apiFetch<{ ok: boolean; messageId?: number }>(
+        '/api/admin/connectors/telegram/test-message',
+        {
+          method: 'POST',
+          body: JSON.stringify({}),
+        },
+      );
+      setMsg(
+        `Mensaje real enviado por Telegram Bot API (message_id: ${res.messageId ?? 'confirmado'}). Revisa tu chat configurado.`,
+      );
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Error enviando mensaje de prueba por Telegram.');
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
   const filteredExecs = executions.filter((ex) => {
     if (execFilter === 'success') return ex.status === 'success' && ex.mode === 'live';
     if (execFilter === 'error') return ex.status === 'error';
@@ -129,7 +151,16 @@ export function EngineAndConnectors({
           {connectors.map((conn) => {
             const isVerified = conn.status === 'verified';
             const isError = conn.status === 'error';
+            const hasSavedFields = Object.keys(conn.maskedValues).length > 0;
             const isEditing = editingKey === conn.key;
+
+            const statusLabel = isVerified
+              ? 'Conectada y verificada'
+              : isError
+                ? 'Error'
+                : hasSavedFields
+                  ? 'Pendiente de verificación'
+                  : 'No configurada';
 
             return (
               <div
@@ -142,12 +173,14 @@ export function EngineAndConnectors({
                       {conn.name}
                     </h2>
                     <span
-                      className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
+                      className={`inline-flex items-center gap-1 font-semibold shrink-0 whitespace-nowrap ${
                         isVerified
                           ? 'text-emerald-700 dark:text-emerald-400'
                           : isError
                             ? 'text-red-600 dark:text-red-400'
-                            : 'text-amber-700 dark:text-amber-400'
+                            : hasSavedFields
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : 'text-slate-500 dark:text-slate-400'
                       }`}
                     >
                       {isVerified ? (
@@ -157,9 +190,7 @@ export function EngineAndConnectors({
                       ) : (
                         <Clock className="w-3.5 h-3.5" />
                       )}
-                      <span>
-                        {isVerified ? 'Conectada' : isError ? 'Error' : 'Pendiente'}
-                      </span>
+                      <span>{statusLabel}</span>
                     </span>
                   </div>
 
@@ -229,12 +260,23 @@ export function EngineAndConnectors({
                     <span>{conn.isLocalCapable ? 'Motor local' : 'Cifrado AES-256'}</span>
                   </span>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {conn.key === 'telegram' && isVerified && (
+                      <button
+                        type="button"
+                        disabled={busyKey === 'telegram-test'}
+                        onClick={handleSendTelegramTest}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 font-semibold rounded-md border border-emerald-700/30 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-60 whitespace-nowrap"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>{busyKey === 'telegram-test' ? 'Enviando...' : 'Enviar mensaje de prueba'}</span>
+                      </button>
+                    )}
                     {conn.requiredFields.length > 0 && !isEditing && (
                       <button
                         type="button"
                         onClick={() => startEdit(conn)}
-                        className="px-2.5 py-1.5 font-medium rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="px-2.5 py-1.5 font-medium rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap"
                       >
                         Configurar
                       </button>
@@ -243,7 +285,7 @@ export function EngineAndConnectors({
                       type="button"
                       disabled={busyKey === conn.key}
                       onClick={() => handleVerifyConnector(conn.key)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 font-semibold rounded-md bg-emerald-700 hover:bg-emerald-800 text-white disabled:opacity-60"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 font-semibold rounded-md bg-emerald-700 hover:bg-emerald-800 text-white disabled:opacity-60 whitespace-nowrap"
                     >
                       <RefreshCw className="w-3 h-3" />
                       <span>{busyKey === conn.key ? 'Verificando...' : 'Verificar'}</span>

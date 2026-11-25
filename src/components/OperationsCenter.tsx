@@ -47,27 +47,65 @@ export function OperationsCenter({
   if (!summary) return null;
 
   const kpis = [
-    { label: 'Total de clientes', value: String(summary.totalClients), icon: Users },
-    { label: 'Automatizaciones creadas', value: String(summary.totalAutomations), icon: Cpu },
-    { label: 'Automatizaciones activas', value: String(summary.activeAutomations), icon: CheckCircle2 },
-    { label: 'Ejecuciones realizadas', value: String(summary.totalExecutions), icon: Clock },
+    {
+      label: 'Clientes reales',
+      value: String(summary.realClients),
+      sub: `${summary.demoClients} en demostración`,
+      icon: Users,
+    },
+    {
+      label: 'Flujos creados',
+      value: String(summary.realAutomations),
+      sub: `${summary.totalAutomations} total (incl. demo)`,
+      icon: Cpu,
+    },
+    {
+      label: 'Automatizaciones activas',
+      value: String(summary.activeAutomations),
+      sub: 'Listas para ejecutar',
+      icon: CheckCircle2,
+    },
+    {
+      label: 'Ejecuciones reales',
+      value: String(summary.realExecutions),
+      sub: `${summary.totalExecutions} total · ${summary.capturedLeadsCount} leads`,
+      icon: Clock,
+    },
     {
       label: 'Errores detectados',
       value: String(summary.detectedErrors),
+      sub: 'En bitácora del motor',
       icon: AlertTriangle,
       tone: summary.detectedErrors > 0 ? 'error' : 'normal',
     },
-    { label: 'Propuestas enviadas', value: String(summary.proposalsSent), icon: FileText },
-    { label: 'Propuestas aceptadas', value: String(summary.proposalsAccepted), icon: CheckCircle2 },
     {
-      label: 'Ingresos verificados',
-      value: formatCurrency(summary.verifiedRevenueCop, 'COP'),
+      label: 'Propuestas enviadas',
+      value: String(summary.proposalsSent),
+      sub: 'Incluye demo',
+      icon: FileText,
+    },
+    {
+      label: 'Propuestas aceptadas',
+      value: String(summary.proposalsAccepted),
+      sub: 'Confirmadas en enlace',
+      icon: CheckCircle2,
+    },
+    {
+      label: 'Ingresos reales verificados',
+      value: formatCurrency(summary.realRevenueCop, 'COP'),
+      sub: `${formatCurrency(summary.demoRevenueCop, 'COP')} demo`,
       icon: Wallet,
     },
-    { label: 'Servicios pendientes', value: String(summary.pendingServicesCount), icon: Clock },
+    {
+      label: 'Servicios pendientes',
+      value: String(summary.pendingServicesCount),
+      sub: 'Prospectos y tickets',
+      icon: Clock,
+    },
     {
       label: 'Alertas de mantenimiento',
       value: String(summary.maintenanceAlerts.length),
+      sub: 'Revisión recomendada',
       icon: AlertTriangle,
       tone: summary.maintenanceAlerts.length > 0 ? 'warning' : 'normal',
     },
@@ -140,6 +178,7 @@ export function OperationsCenter({
                 <Icon className="w-4 h-4 text-slate-400 shrink-0" />
               </div>
               <p className={`font-mono tabular-nums text-2xl font-bold ${valueColor}`}>{kpi.value}</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">{kpi.sub}</p>
             </div>
           );
         })}

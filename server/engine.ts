@@ -239,7 +239,93 @@ export async function runAutomationExecution(
       continue;
     }
 
-    // Verified external connectors (whatsapp, gmail, google_calendar, google_sheets, telegram)
+    if (step.connectorKey === 'telegram') {
+      const secrets = db.connectorEncryptedSecrets['telegram'] || {};
+      const { decryptSecret } = await import('./crypto.ts');
+      const botToken = secrets.botToken
+        ? decryptSecret(secrets.botToken)
+        : process.env.TELEGRAM_BOT_TOKEN?.trim() || '';
+      const chatId = secrets.defaultChatId
+        ? decryptSecret(secrets.defaultChatId)
+        : process.env.TELEGRAM_CHAT_ID?.trim() || '';
+
+      if (!botToken || !chatId) {
+        failedMessage = 'Faltan botToken o defaultChatId configurados en Telegram Bot API.';
+        traces.push({
+          stepId: step.id,
+          title: step.title,
+          connectorKey: step.connectorKey,
+          status: 'error',
+          detail: failedMessage,
+          durationMs: Math.max(1, Date.now() - stepStart),
+        });
+        break;
+      }
+
+      if (mode === 'live') {
+        try {
+          const textMsg = [
+            `JAIRRESTAURA AUTOMATIZA IA · ${automation.name}`,
+            `Paso: ${step.title}`,
+            `Datos: ${summarizePayload(rawPayload)}`,
+          ].join('\n');
+
+          const resp = await fetch(
+            `https://api.telegram.org/bot${encodeURIComponent(botToken)}/sendMessage`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatId,
+                text: textMsg,
+              }),
+              signal: AbortSignal.timeout(6000),
+            },
+          );
+          const tgJson = (await resp.json().catch(() => ({}))) as {
+            ok?: boolean;
+            description?: string;
+            result?: { message_id?: number };
+          };
+          if (!resp.ok || !tgJson.ok) {
+            throw new Error(tgJson.description || `Telegram API respondió HTTP ${resp.status}.`);
+          }
+          traces.push({
+            stepId: step.id,
+            title: step.title,
+            connectorKey: step.connectorKey,
+            status: 'ok',
+            detail: `Mensaje real enviado a Telegram (message_id: ${tgJson.result?.message_id ?? 'ok'}).`,
+            durationMs: Math.max(3, Date.now() - stepStart),
+          });
+          continue;
+        } catch (err) {
+          failedMessage =
+            err instanceof Error ? err.message : 'Error al enviar mensaje por Telegram Bot API.';
+          traces.push({
+            stepId: step.id,
+            title: step.title,
+            connectorKey: step.connectorKey,
+            status: 'error',
+            detail: failedMessage,
+            durationMs: Math.max(1, Date.now() - stepStart),
+          });
+          break;
+        }
+      }
+
+      traces.push({
+        stepId: step.id,
+        title: step.title,
+        connectorKey: step.connectorKey,
+        status: 'ok',
+        detail: 'Credenciales de Telegram verificadas y formato de mensaje validado (modo prueba).',
+        durationMs: Math.max(3, Date.now() - stepStart),
+      });
+      continue;
+    }
+
+    // Verified external connectors (whatsapp, gmail, google_calendar, google_sheets)
     traces.push({
       stepId: step.id,
       title: step.title,
@@ -247,8 +333,8 @@ export async function runAutomationExecution(
       status: 'ok',
       detail:
         mode === 'live'
-          ? `Despacho ejecutado a través de conector verificado ${connector.name}.`
-          : `Conector ${connector.name} verificado y listo para ejecución.`,
+          ? `Conector ${connector.name} verificado (despacho HTTP específico pendiente de Fase 2).`
+          : `Conector ${connector.name} verificado y listo para validación.`,
       durationMs: Math.max(3, Date.now() - stepStart),
     });
   }

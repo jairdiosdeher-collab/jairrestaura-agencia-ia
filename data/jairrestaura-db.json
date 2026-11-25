@@ -1,0 +1,800 @@
+{
+  "adminPasswordHash": "775e2d1de641e21c9de7cdc8b17f2390:47e72a516a6572fc3c5230ddb5936a9e789571861111ba849c964226503c2b18d687a0e582cf342bf3bd383fd73eb298282a2ac130644843f09651eb32e28151",
+  "clientCredentials": [
+    {
+      "clientId": "cli-demo-1",
+      "email": "coordinacion@bienestarintegral.demo",
+      "passwordHash": "6dd4e7af8bba10163fbf8e6ae847a0f5:c01af1588c2a2a91a7f598cbab81ad5c9bea75bea59080007abaa0295ff69fc0ecff6b4e90d383a92bd7419e30584097ec39caf9517603a902001edb6a946726",
+      "updatedAt": "2026-11-24T15:30:00.000Z"
+    },
+    {
+      "clientId": "cli-demo-2",
+      "email": "secretaria@vidanueva.demo",
+      "passwordHash": "46cb26122a0f86b45379fac7375a49d5:69416dab230a864b7f9d788d07c5191220c85c99ffc14b6a03a597caba060feb3d780bf77f79f816a1309219ae0f99fdff8eb92c35aefb5582cf0f617213a31e",
+      "updatedAt": "2026-11-24T15:30:00.000Z"
+    },
+    {
+      "clientId": "cli-demo-3",
+      "email": "gerencia@muzoreal.demo",
+      "passwordHash": "3337091ca5d67846dc7e06ec1f37472e:0326c1bdb054d03eb66de440a66a6bf9c6ca58df643280b4777cbcefa5d73bf2bed8caa7aa84e778d35679620337c7cbdad55f720381b9262f5460cb590ac10b",
+      "updatedAt": "2026-11-24T15:30:00.000Z"
+    }
+  ],
+  "clients": [
+    {
+      "id": "cli-demo-1",
+      "name": "Dra. Carolina Mendoza",
+      "businessName": "Clínica Bienestar Integral",
+      "sector": "Salud y Bienestar",
+      "email": "coordinacion@bienestarintegral.demo",
+      "phone": "+57 310 555 0142",
+      "city": "Bogotá, Colombia",
+      "commercialStatus": "Activo",
+      "contractedServices": [
+        "JAIRRESTAURA CONSULTORIO",
+        "Recordatorios automáticos"
+      ],
+      "monthlyMaintenanceCop": 380000,
+      "habeasDataConsent": true,
+      "consentDate": "2026-10-12T10:00:00.000Z",
+      "privacyNoticeVersion": "v1.2-Ley1581",
+      "portalAccessEnabled": true,
+      "notes": "Flujo principal de recepción administrativa y agenda de citas.",
+      "supportHistory": [
+        {
+          "id": "sup-demo-1",
+          "type": "soporte",
+          "subject": "Ajuste de horario de atención sábados",
+          "message": "Se configuró franja de 8:00 a.m. a 12:30 p.m. en el flujo web.",
+          "status": "resuelto",
+          "createdAt": "2026-11-18T14:20:00.000Z",
+          "createdBy": "admin"
+        }
+      ],
+      "createdAt": "2026-10-12T10:00:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "cli-demo-2",
+      "name": "Pastor Mateo Restrepo",
+      "businessName": "Iglesia Comunidad Vida Nueva",
+      "sector": "Iglesias y Ministerios",
+      "email": "secretaria@vidanueva.demo",
+      "phone": "+57 315 555 0198",
+      "city": "Medellín, Colombia",
+      "commercialStatus": "Activo",
+      "contractedServices": [
+        "JAIRRESTAURA IGLESIAS",
+        "Gestión de solicitudes de oración"
+      ],
+      "monthlyMaintenanceCop": 320000,
+      "habeasDataConsent": true,
+      "consentDate": "2026-10-20T09:15:00.000Z",
+      "privacyNoticeVersion": "v1.2-Ley1581",
+      "portalAccessEnabled": true,
+      "notes": "Captación de visitantes dominicales y canal privado de intercesión.",
+      "supportHistory": [
+        {
+          "id": "sup-demo-2",
+          "type": "solicitud_cambio",
+          "subject": "Agregar campo de barrio en tarjeta de visitantes",
+          "message": "Solicitan capturar barrio para asignar grupo cercano.",
+          "status": "en_revision",
+          "createdAt": "2026-11-22T11:05:00.000Z",
+          "createdBy": "client"
+        }
+      ],
+      "createdAt": "2026-10-20T09:15:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "cli-demo-3",
+      "name": "Julián Torres",
+      "businessName": "Esmeraldas Muzo Real S.A.S.",
+      "sector": "Joyería y Minería Responsable",
+      "email": "gerencia@muzoreal.demo",
+      "phone": "+57 320 555 0174",
+      "city": "Bogotá / Boyacá, Colombia",
+      "commercialStatus": "Mantenimiento",
+      "contractedServices": [
+        "JAIRRESTAURA ESMERALDA"
+      ],
+      "monthlyMaintenanceCop": 720000,
+      "habeasDataConsent": true,
+      "consentDate": "2026-11-02T16:40:00.000Z",
+      "privacyNoticeVersion": "v1.2-Ley1581",
+      "portalAccessEnabled": true,
+      "notes": "Trazabilidad de lotes certificados y envío de dossiers comerciales.",
+      "supportHistory": [],
+      "createdAt": "2026-11-02T16:40:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "cli-demo-4",
+      "name": "Valeria Gómez",
+      "businessName": "Café Origen Andino",
+      "sector": "Comercio y Pymes",
+      "email": "ventas@origenandino.demo",
+      "phone": "+57 301 555 0166",
+      "city": "Armenia, Quindío",
+      "commercialStatus": "Propuesta enviada",
+      "contractedServices": [
+        "JAIRRESTAURA EMPRENDE"
+      ],
+      "monthlyMaintenanceCop": 390000,
+      "habeasDataConsent": true,
+      "consentDate": "2026-11-20T13:10:00.000Z",
+      "privacyNoticeVersion": "v1.2-Ley1581",
+      "portalAccessEnabled": false,
+      "notes": "Propuesta enviada para automatizar pedidos mayoristas e inventario.",
+      "supportHistory": [],
+      "createdAt": "2026-11-20T13:10:00.000Z",
+      "isDemo": true
+    }
+  ],
+  "automations": [
+    {
+      "id": "auto-demo-1",
+      "clientId": "cli-demo-1",
+      "name": "Recepción web y registro de solicitudes de cita",
+      "description": "Flujo local verificado para recibir solicitudes de atención con consentimiento y registrar en CRM.",
+      "sector": "Salud y Bienestar",
+      "templateId": "sol-consultorio",
+      "status": "active",
+      "clientCanToggle": true,
+      "webhookSlug": "demo-consultorio-citas",
+      "steps": [
+        {
+          "id": "st-d1-1",
+          "order": 1,
+          "type": "trigger",
+          "title": "Recepción de solicitud web",
+          "description": "Captura datos básicos y autorización Ley 1581.",
+          "connectorKey": "web_form",
+          "configSummary": "Endpoint local /api/hooks/demo-consultorio-citas",
+          "requiredFields": [
+            "nombre",
+            "telefono"
+          ]
+        },
+        {
+          "id": "st-d1-2",
+          "order": 2,
+          "type": "crm_record",
+          "title": "Registro administrativo en CRM",
+          "description": "Guarda la solicitud sin almacenar diagnósticos médicos.",
+          "connectorKey": "internal_crm",
+          "configSummary": "CRM Interno JairRestaura"
+        }
+      ],
+      "explanation": {
+        "whatItDoes": "Organiza las solicitudes entrantes de pacientes, registra sus datos de contacto con autorización y coordina citas y recordatorios.",
+        "whenItRuns": "Cada vez que un usuario envía una solicitud de cita o se cumple el plazo de 24 horas previo a la atención.",
+        "dataUsed": [
+          "Nombre completo",
+          "Teléfono de contacto",
+          "Fecha y hora solicitada",
+          "Aceptación de política de privacidad"
+        ],
+        "requiredApps": [
+          "Formularios Web JairRestaura",
+          "CRM Interno",
+          "Google Calendar",
+          "WhatsApp Business API"
+        ],
+        "requiredPermissions": [
+          "Lectura y escritura de agenda",
+          "Envío de plantillas de recordatorio",
+          "Registro de consentimiento"
+        ],
+        "externalCosts": "Uso de WhatsApp Business API según volumen de conversaciones y cuenta de Google Workspace si aplica."
+      },
+      "executionCount": 18,
+      "errorCount": 1,
+      "lastRunAt": "2026-11-24T14:10:00.000Z",
+      "createdAt": "2026-10-14T11:00:00.000Z",
+      "updatedAt": "2026-11-24T14:10:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "auto-demo-2",
+      "clientId": "cli-demo-2",
+      "name": "Registro confidencial de solicitudes de oración",
+      "description": "Canal seguro de recepción de peticiones y almacenamiento cifrado en CRM pastoral.",
+      "sector": "Iglesias y Ministerios",
+      "templateId": "sol-iglesias",
+      "status": "active",
+      "clientCanToggle": true,
+      "webhookSlug": "demo-vidanueva-oracion",
+      "steps": [
+        {
+          "id": "st-d2-1",
+          "order": 1,
+          "type": "trigger",
+          "title": "Envío de petición de oración",
+          "description": "Recibe petición con opción de reserva de identidad.",
+          "connectorKey": "web_form",
+          "configSummary": "Formulario confidencial",
+          "requiredFields": [
+            "peticion"
+          ]
+        },
+        {
+          "id": "st-d2-2",
+          "order": 2,
+          "type": "crm_record",
+          "title": "Registro pastoral protegido",
+          "description": "Almacena en bitácora de intercesión.",
+          "connectorKey": "internal_crm",
+          "configSummary": "Acceso exclusivo ministerio"
+        }
+      ],
+      "explanation": {
+        "whatItDoes": "Asegura que cada visitante o miembro inscrito reciba atención oportuna y quede conectado con el equipo correspondiente.",
+        "whenItRuns": "Al registrarse un visitante, solicitud de oración o inscripción a evento.",
+        "dataUsed": [
+          "Nombre",
+          "Teléfono",
+          "Motivo de oración o interés",
+          "Consentimiento de tratamiento de datos"
+        ],
+        "requiredApps": [
+          "Formularios Web",
+          "CRM Interno",
+          "Telegram",
+          "WhatsApp Business API"
+        ],
+        "requiredPermissions": [
+          "Notificación a canal ministerial",
+          "Envío de bienvenida"
+        ],
+        "externalCosts": "Telegram Bot API es gratuito; WhatsApp según tarifa de Meta Cloud API."
+      },
+      "executionCount": 31,
+      "errorCount": 0,
+      "lastRunAt": "2026-11-24T13:05:00.000Z",
+      "createdAt": "2026-10-21T16:00:00.000Z",
+      "updatedAt": "2026-11-24T13:05:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "auto-demo-3",
+      "clientId": "cli-demo-3",
+      "name": "Trazabilidad de lotes de esmeraldas (pendiente WhatsApp/Sheets)",
+      "description": "Flujo diseñado esperando verificación de credenciales externas de Google Sheets.",
+      "sector": "Joyería y Minería Responsable",
+      "templateId": "sol-esmeralda",
+      "status": "paused",
+      "clientCanToggle": false,
+      "webhookSlug": "demo-muzo-trazabilidad",
+      "steps": [
+        {
+          "id": "s-1",
+          "order": 1,
+          "type": "trigger",
+          "title": "Alta o movimiento de lote de esmeralda",
+          "description": "Registra código de lote, quilates, origen y estado documental.",
+          "connectorKey": "webhook",
+          "configSummary": "Webhook firmado con verificación de operador",
+          "requiredFields": [
+            "codigoLote",
+            "quilates"
+          ]
+        },
+        {
+          "id": "s-2",
+          "order": 2,
+          "type": "crm_record",
+          "title": "Registro comercial y trazabilidad",
+          "description": "Vincula la ficha de la pieza con comprador o consignación en CRM.",
+          "connectorKey": "internal_crm",
+          "configSummary": "Módulo Trazabilidad Esmeralda"
+        },
+        {
+          "id": "s-3",
+          "order": 3,
+          "type": "action",
+          "title": "Actualización de libro maestro de inventario",
+          "description": "Registra movimiento en hoja maestra con marca temporal verificable.",
+          "connectorKey": "google_sheets",
+          "configSummary": "Libro: Trazabilidad_Lotes_Esmeralda"
+        },
+        {
+          "id": "s-4",
+          "order": 4,
+          "type": "notification",
+          "title": "Envío de dossier comercial al cliente",
+          "description": "Remite ficha técnica, condiciones comerciales y documentación adjunta.",
+          "connectorKey": "gmail",
+          "configSummary": "Correo corporativo con enlace verificable"
+        }
+      ],
+      "explanation": {
+        "whatItDoes": "Controla el inventario de esmeraldas por lote, documenta su trazabilidad comercial y agiliza la entrega de dossiers a compradores.",
+        "whenItRuns": "Al registrar un nuevo lote, cambio de custodia o solicitud formal de cotización.",
+        "dataUsed": [
+          "Código de lote",
+          "Peso en quilates",
+          "Origen y certificación",
+          "Datos del comprador autorizado"
+        ],
+        "requiredApps": [
+          "Webhooks Firmados",
+          "CRM Interno",
+          "Google Sheets",
+          "Gmail"
+        ],
+        "requiredPermissions": [
+          "Acceso restringido por rol",
+          "Escritura en libro maestro",
+          "Registro de auditoría"
+        ],
+        "externalCosts": "Depende únicamente de las cuentas corporativas de correo/almacenamiento del cliente."
+      },
+      "executionCount": 2,
+      "errorCount": 1,
+      "lastRunAt": "2026-11-23T09:40:00.000Z",
+      "createdAt": "2026-11-05T10:00:00.000Z",
+      "updatedAt": "2026-11-23T09:40:00.000Z",
+      "isDemo": true
+    }
+  ],
+  "proposals": [
+    {
+      "id": "prop-demo-1",
+      "clientId": "cli-demo-4",
+      "clientName": "Valeria Gómez",
+      "businessName": "Café Origen Andino",
+      "shareToken": "prop-origen-andino-demo",
+      "title": "Automatización de Pedidos Mayoristas e Inventario",
+      "problemStatement": "Los pedidos recibidos por mensajes dispersos generan retrasos en la confirmación, errores en inventario y demoras al emitir cotizaciones.",
+      "proposedSolution": "Implementación del módulo JAIRRESTAURA EMPRENDE con captura estructurada de pedidos, verificación automática de existencias y registro en CRM.",
+      "howItWorks": "1) El comprador registra su pedido en formulario o webhook. 2) El motor valida existencias en inventario. 3) Se crea el registro en CRM y se envía confirmación formal.",
+      "benefits": [
+        "Reducción superior al 70% en tiempo de respuesta comercial",
+        "Control actualizado de inventario sin registros duplicados",
+        "Panel independiente para consultar pedidos y ejecuciones en tiempo real"
+      ],
+      "installationPriceCop": 1300000,
+      "monthlyMaintenanceCop": 390000,
+      "currency": "COP",
+      "estimatedDays": 6,
+      "terms": "Pago del 50% al aprobar la propuesta y 50% contra entrega verificada. El mantenimiento mensual cubre monitoreo, soporte prioritario y ajustes menores. Sujeto a Ley 1581 de 2012.",
+      "validUntil": "2026-12-15",
+      "status": "enviada",
+      "planName": "PROFESIONAL",
+      "createdAt": "2026-11-20T14:00:00.000Z",
+      "updatedAt": "2026-11-20T14:00:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "prop-demo-2",
+      "clientId": "cli-demo-1",
+      "clientName": "Dra. Carolina Mendoza",
+      "businessName": "Clínica Bienestar Integral",
+      "shareToken": "prop-bienestar-integral-demo",
+      "title": "Sistema de Solicitudes de Atención y Recordatorios",
+      "problemStatement": "Alta carga operativa en recepción para responder solicitudes de cita y recordar horarios a los pacientes.",
+      "proposedSolution": "Módulo JAIRRESTAURA CONSULTORIO enfocado en coordinación administrativa y recordatorios sin automatizar decisiones clínicas.",
+      "howItWorks": "1) Solicitud verificada con consentimiento. 2) Registro administrativo en CRM. 3) Confirmación de horario y recordatorio previo.",
+      "benefits": [
+        "Disminución de inasistencias a citas programadas",
+        "Cumplimiento integral de privacidad y Habeas Data",
+        "Trazabilidad completa de solicitudes desde el Panel del Cliente"
+      ],
+      "installationPriceCop": 1350000,
+      "monthlyMaintenanceCop": 380000,
+      "currency": "COP",
+      "estimatedDays": 5,
+      "terms": "Instalación única más mantenimiento mensual renovable sin cláusulas de permanencia forzada.",
+      "validUntil": "2026-11-30",
+      "status": "aceptada",
+      "planName": "PROFESIONAL",
+      "createdAt": "2026-10-10T09:00:00.000Z",
+      "updatedAt": "2026-10-12T10:00:00.000Z",
+      "isDemo": true
+    }
+  ],
+  "connectors": [
+    {
+      "key": "internal_crm",
+      "name": "CRM Interno JairRestaura",
+      "category": "local",
+      "description": "Motor nativo de almacenamiento para prospectos, clientes, citas y registros de soporte con consentimiento Ley 1581.",
+      "status": "verified",
+      "isLocalCapable": true,
+      "requiredFields": [],
+      "maskedValues": {
+        "modo": "Base local verificada"
+      },
+      "lastVerifiedAt": "2026-11-25T08:00:00.000Z"
+    },
+    {
+      "key": "web_form",
+      "name": "Formularios Web JairRestaura",
+      "category": "local",
+      "description": "Capturador nativo de formularios con validación de entrada y registro de consentimiento Habeas Data.",
+      "status": "verified",
+      "isLocalCapable": true,
+      "requiredFields": [],
+      "maskedValues": {
+        "endpoint": "/api/hooks/:slug"
+      },
+      "lastVerifiedAt": "2026-11-25T08:00:00.000Z"
+    },
+    {
+      "key": "webhook",
+      "name": "Webhooks Firmados (HMAC)",
+      "category": "integracion",
+      "description": "Receptor y emisor HTTP seguro con verificación de firma HMAC-SHA256 y protección contra SSRF.",
+      "status": "verified",
+      "isLocalCapable": true,
+      "requiredFields": [
+        {
+          "key": "signingSecret",
+          "label": "Secreto de firma HMAC (opcional para salientes)",
+          "placeholder": "whsec_...",
+          "secret": true
+        }
+      ],
+      "maskedValues": {
+        "algoritmo": "HMAC-SHA256"
+      },
+      "lastVerifiedAt": "2026-11-25T08:00:00.000Z"
+    },
+    {
+      "key": "whatsapp",
+      "name": "WhatsApp Business API",
+      "category": "mensajeria",
+      "description": "Recepción de mensajes entrantes y envío de respuestas verificadas mediante Meta Cloud API.",
+      "status": "pending_config",
+      "isLocalCapable": false,
+      "requiredFields": [
+        {
+          "key": "phoneNumberId",
+          "label": "ID de número de teléfono (Phone Number ID)",
+          "placeholder": "104829103847123",
+          "secret": false
+        },
+        {
+          "key": "accessToken",
+          "label": "Token permanente de WhatsApp Cloud API",
+          "placeholder": "EAAG...",
+          "secret": true
+        }
+      ],
+      "maskedValues": {}
+    },
+    {
+      "key": "gmail",
+      "name": "Gmail / Correo Corporativo",
+      "category": "google",
+      "description": "Envío de notificaciones, cotizaciones y confirmaciones desde la cuenta autorizada.",
+      "status": "pending_config",
+      "isLocalCapable": false,
+      "requiredFields": [
+        {
+          "key": "senderEmail",
+          "label": "Correo remitente autorizado",
+          "placeholder": "automatizaciones@tuempresa.com",
+          "secret": false
+        },
+        {
+          "key": "smtpOrApiToken",
+          "label": "Credencial SMTP / Token OAuth",
+          "placeholder": "Token cifrado en servidor",
+          "secret": true
+        }
+      ],
+      "maskedValues": {}
+    },
+    {
+      "key": "google_calendar",
+      "name": "Google Calendar",
+      "category": "google",
+      "description": "Consulta de disponibilidad real, creación de citas y programación de recordatorios.",
+      "status": "pending_config",
+      "isLocalCapable": false,
+      "requiredFields": [
+        {
+          "key": "calendarId",
+          "label": "ID de Calendario",
+          "placeholder": "primary o agenda@dominio.com",
+          "secret": false
+        },
+        {
+          "key": "oauthToken",
+          "label": "Token de acceso de Google Calendar",
+          "placeholder": "ya29...",
+          "secret": true
+        }
+      ],
+      "maskedValues": {}
+    },
+    {
+      "key": "google_sheets",
+      "name": "Google Sheets",
+      "category": "google",
+      "description": "Sincronización de inventarios, registros contables y trazabilidad en hojas de cálculo.",
+      "status": "pending_config",
+      "isLocalCapable": false,
+      "requiredFields": [
+        {
+          "key": "spreadsheetId",
+          "label": "ID de Hoja de Cálculo",
+          "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+          "secret": false
+        },
+        {
+          "key": "serviceToken",
+          "label": "Credencial de acceso Google Sheets",
+          "placeholder": "Token autorizado",
+          "secret": true
+        }
+      ],
+      "maskedValues": {}
+    },
+    {
+      "key": "telegram",
+      "name": "Telegram Bot API",
+      "category": "mensajeria",
+      "description": "Alertas operativas, atención rápida y notificaciones para equipos internos.",
+      "status": "pending_config",
+      "isLocalCapable": false,
+      "requiredFields": [
+        {
+          "key": "botToken",
+          "label": "Token del Bot (@BotFather)",
+          "placeholder": "123456789:AAH...",
+          "secret": true
+        },
+        {
+          "key": "defaultChatId",
+          "label": "Chat ID de destino",
+          "placeholder": "-1001234567890",
+          "secret": false
+        }
+      ],
+      "maskedValues": {}
+    },
+    {
+      "key": "external_api",
+      "name": "APIs Externas y Sistemas CRM",
+      "category": "integracion",
+      "description": "Conector REST saliente con validación HTTPS, cabeceras cifradas y protección SSRF.",
+      "status": "pending_config",
+      "isLocalCapable": false,
+      "requiredFields": [
+        {
+          "key": "baseUrl",
+          "label": "URL base HTTPS del servicio",
+          "placeholder": "https://api.ejemplo.com/v1",
+          "secret": false
+        },
+        {
+          "key": "apiKey",
+          "label": "Clave o Bearer Token del servicio",
+          "placeholder": "key_...",
+          "secret": true
+        }
+      ],
+      "maskedValues": {}
+    }
+  ],
+  "connectorEncryptedSecrets": {},
+  "executions": [
+    {
+      "id": "exec-demo-1",
+      "automationId": "auto-demo-1",
+      "automationName": "Recepción web y registro de solicitudes de cita",
+      "clientId": "cli-demo-1",
+      "mode": "live",
+      "status": "success",
+      "triggerSource": "Formulario Web (/api/hooks/demo-consultorio-citas)",
+      "inputSummary": "Solicitante: Andrés Felipe Ruiz · Tel: +57 312 *** 8810",
+      "outputSummary": "Registro CRM creado correctamente (con consentimiento Ley 1581).",
+      "stepTraces": [
+        {
+          "stepId": "st-d1-1",
+          "title": "Recepción de solicitud web",
+          "connectorKey": "web_form",
+          "status": "ok",
+          "detail": "Campos obligatorios validados (nombre, telefono).",
+          "durationMs": 14
+        },
+        {
+          "stepId": "st-d1-2",
+          "title": "Registro administrativo en CRM",
+          "connectorKey": "internal_crm",
+          "status": "ok",
+          "detail": "Contacto almacenado en base local verificada.",
+          "durationMs": 22
+        }
+      ],
+      "durationMs": 36,
+      "createdAt": "2026-11-24T14:10:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "exec-demo-2",
+      "automationId": "auto-demo-3",
+      "automationName": "Trazabilidad de lotes de esmeraldas (pendiente WhatsApp/Sheets)",
+      "clientId": "cli-demo-3",
+      "mode": "test",
+      "status": "error",
+      "triggerSource": "Prueba de validación manual",
+      "inputSummary": "Lote: MZ-2026-09 · Quilates: 3.4",
+      "outputSummary": "Detenido en paso 3: conector Google Sheets pendiente de configuración.",
+      "stepTraces": [
+        {
+          "stepId": "s-1",
+          "title": "Alta o movimiento de lote de esmeralda",
+          "connectorKey": "webhook",
+          "status": "ok",
+          "detail": "Estructura del lote validada.",
+          "durationMs": 9
+        },
+        {
+          "stepId": "s-2",
+          "title": "Registro comercial y trazabilidad",
+          "connectorKey": "internal_crm",
+          "status": "ok",
+          "detail": "Simulación de escritura CRM superada.",
+          "durationMs": 11
+        },
+        {
+          "stepId": "s-3",
+          "title": "Actualización de libro maestro de inventario",
+          "connectorKey": "google_sheets",
+          "status": "error",
+          "detail": "Conector Google Sheets está en estado Pendiente de configuración.",
+          "durationMs": 4
+        }
+      ],
+      "errorMessage": "El conector Google Sheets requiere credenciales verificadas antes de activar el flujo en producción.",
+      "durationMs": 24,
+      "createdAt": "2026-11-23T09:40:00.000Z",
+      "isDemo": true
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-demo-1",
+      "clientId": "cli-demo-1",
+      "clientName": "Clínica Bienestar Integral",
+      "concept": "Instalación JAIRRESTAURA CONSULTORIO + Mes 1",
+      "kind": "instalacion",
+      "provider": "wompi",
+      "amount": 1730000,
+      "currency": "COP",
+      "status": "verificado",
+      "providerReference": "WOMPI-DEMO-90812",
+      "providerVerified": true,
+      "adminAuthorized": true,
+      "createdAt": "2026-10-12T10:15:00.000Z",
+      "verifiedAt": "2026-10-12T10:16:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "pay-demo-2",
+      "clientId": "cli-demo-2",
+      "clientName": "Iglesia Comunidad Vida Nueva",
+      "concept": "Mantenimiento mensual Noviembre 2026",
+      "kind": "mantenimiento",
+      "provider": "wompi",
+      "amount": 320000,
+      "currency": "COP",
+      "status": "pendiente_confirmacion",
+      "providerReference": "PENDIENTE-CONFIRMACION-PROVEEDOR",
+      "providerVerified": false,
+      "adminAuthorized": false,
+      "createdAt": "2026-11-24T09:00:00.000Z",
+      "isDemo": true
+    }
+  ],
+  "paymentSettings": {
+    "realPaymentsAuthorizedByAdmin": false,
+    "wompiConfigured": false,
+    "stripeConfigured": false,
+    "wompiEnvironment": "sandbox",
+    "stripeMode": "test"
+  },
+  "plans": [
+    {
+      "id": "inicial",
+      "name": "INICIAL",
+      "audience": "Para emprendedores y pequeños negocios",
+      "installationPriceCop": 650000,
+      "monthlyPriceCop": 190000,
+      "maxAutomations": 2,
+      "maxMonthlyExecutions": 1500,
+      "includedSupport": "Soporte por ticket en 48 h hábiles",
+      "features": [
+        "Hasta 2 automatizaciones activas",
+        "Panel independiente para el cliente",
+        "Registro verificable de ejecuciones y errores",
+        "Cumplimiento base Ley 1581 de 2012"
+      ],
+      "active": true
+    },
+    {
+      "id": "profesional",
+      "name": "PROFESIONAL",
+      "audience": "Para negocios que requieren varias automatizaciones",
+      "installationPriceCop": 1450000,
+      "monthlyPriceCop": 420000,
+      "maxAutomations": 8,
+      "maxMonthlyExecutions": 10000,
+      "includedSupport": "Soporte prioritario y monitoreo preventivo",
+      "features": [
+        "Hasta 8 automatizaciones activas",
+        "Integración con WhatsApp, Calendar, Sheets y Gmail",
+        "Asistente JAIR IA AUTOMATIZA para flujos internos",
+        "Alertas de mantenimiento y reportes mensuales"
+      ],
+      "active": true
+    },
+    {
+      "id": "empresarial",
+      "name": "EMPRESARIAL",
+      "audience": "Para organizaciones con varios usuarios y procesos",
+      "installationPriceCop": 3200000,
+      "monthlyPriceCop": 890000,
+      "maxAutomations": 30,
+      "maxMonthlyExecutions": 50000,
+      "includedSupport": "Acompañamiento dedicado y SLA de respuesta",
+      "features": [
+        "Hasta 30 automatizaciones multi-área",
+        "Webhooks firmados y conectores a medida",
+        "Auditoría completa, copias de seguridad y control por roles",
+        "Implementación especializada por sector"
+      ],
+      "active": true
+    }
+  ],
+  "auditLogs": [
+    {
+      "actorRole": "client",
+      "actorLabel": "Clínica Bienestar Integral",
+      "action": "INICIO_SESION_CLIENTE",
+      "targetType": "cliente",
+      "targetId": "cli-demo-1",
+      "detail": "Acceso al Panel del Cliente para Clínica Bienestar Integral.",
+      "id": "aud-1795621185204-3qec",
+      "createdAt": "2026-11-25T15:39:45.204Z"
+    },
+    {
+      "actorRole": "admin",
+      "actorLabel": "Jair (Admin)",
+      "action": "CONFIGURAR_CLAVE_ADMIN",
+      "targetType": "autenticacion",
+      "targetId": "admin",
+      "detail": "Administrador inicial configurado mediante registro seguro en primer uso.",
+      "id": "aud-1795617162291-rstb",
+      "createdAt": "2026-11-25T14:32:42.291Z"
+    },
+    {
+      "id": "aud-demo-1",
+      "actorRole": "system",
+      "actorLabel": "Sistema JairRestaura",
+      "action": "INICIALIZACION_MODULO",
+      "targetType": "plataforma",
+      "targetId": "jairrestaura-automatiza-ia",
+      "detail": "Datos de demostración iniciales cargados con separación por cliente y cumplimiento Ley 1581.",
+      "createdAt": "2026-11-24T15:30:00.000Z"
+    }
+  ],
+  "arcoRequests": [
+    {
+      "id": "arco-demo-1",
+      "clientId": "cli-demo-1",
+      "clientName": "Clínica Bienestar Integral",
+      "rightType": "Acceso",
+      "description": "Solicitud de copia de registros de consentimiento de noviembre (Demo).",
+      "status": "completada",
+      "createdAt": "2026-11-15T10:00:00.000Z",
+      "resolvedAt": "2026-11-15T16:30:00.000Z"
+    }
+  ],
+  "crmCapturedLeads": []
+}

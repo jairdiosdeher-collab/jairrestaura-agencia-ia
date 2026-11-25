@@ -9,6 +9,7 @@ import {
   Cpu,
   CreditCard,
   FileText,
+  Inbox,
   Layers,
   LogOut,
   Menu,
@@ -23,11 +24,13 @@ import { AuthGate } from './components/AuthGate.tsx';
 import { AutomationStudio } from './components/AutomationStudio.tsx';
 import { CatalogHub } from './components/CatalogHub.tsx';
 import { ClientPortal } from './components/ClientPortal.tsx';
+import { ContactFormsModule } from './components/ContactFormsModule.tsx';
 import { CrmClients } from './components/CrmClients.tsx';
 import { EngineAndConnectors } from './components/EngineAndConnectors.tsx';
 import { OperationsCenter } from './components/OperationsCenter.tsx';
 import { PaymentsModule } from './components/PaymentsModule.tsx';
 import { ProposalsAndPlans } from './components/ProposalsAndPlans.tsx';
+import { PublicContactFormView } from './components/PublicContactFormView.tsx';
 import { PublicProposalView } from './components/PublicProposalView.tsx';
 import { SecurityCompliance } from './components/SecurityCompliance.tsx';
 import { apiFetch, setMemorySession } from './lib/api.ts';
@@ -51,6 +54,7 @@ type AdminViewId =
   | 'creador'
   | 'catalogo'
   | 'crm'
+  | 'formularios'
   | 'propuestas'
   | 'motor'
   | 'cobros'
@@ -62,6 +66,7 @@ const NAV_ITEMS: Array<{ id: AdminViewId; label: string; icon: React.ComponentTy
   { id: 'creador', label: 'Creador IA', icon: Sparkles },
   { id: 'catalogo', label: 'Catálogo JairRestaura', icon: Layers },
   { id: 'crm', label: 'CRM de Clientes', icon: Users },
+  { id: 'formularios', label: 'Formularios de Contacto', icon: Inbox },
   { id: 'propuestas', label: 'Propuestas y Planes', icon: FileText },
   { id: 'motor', label: 'Motor y Conectores', icon: Cpu },
   { id: 'cobros', label: 'Cobros y Suscripciones', icon: CreditCard },
@@ -74,6 +79,10 @@ export default function App() {
   const [publicProposalToken, setPublicProposalToken] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('propuesta');
+  });
+  const [publicFormSlug, setPublicFormSlug] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('formulario');
   });
 
   const [authStatus, setAuthStatus] = useState<{
@@ -221,6 +230,10 @@ export default function App() {
     setPublicProposalToken(token);
   }
 
+  function openPublicForm(slug: string) {
+    setPublicFormSlug(slug);
+  }
+
   if (publicProposalToken) {
     return (
       <PublicProposalView
@@ -228,6 +241,20 @@ export default function App() {
         onExit={() => {
           setPublicProposalToken(null);
           if (window.location.search.includes('propuesta=')) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        }}
+      />
+    );
+  }
+
+  if (publicFormSlug) {
+    return (
+      <PublicContactFormView
+        slug={publicFormSlug}
+        onExit={() => {
+          setPublicFormSlug(null);
+          if (window.location.search.includes('formulario=')) {
             window.history.replaceState({}, '', window.location.pathname);
           }
         }}
@@ -526,6 +553,14 @@ export default function App() {
                 setPreviewClientId(cid);
                 setActiveView('portal_preview');
               }}
+            />
+          )}
+
+          {activeView === 'formularios' && (
+            <ContactFormsModule
+              automations={automations}
+              clients={clients}
+              onOpenPublicForm={openPublicForm}
             />
           )}
 

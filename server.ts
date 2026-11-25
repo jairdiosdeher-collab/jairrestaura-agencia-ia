@@ -35,7 +35,7 @@ interface AuthedRequest extends Request {
   user?: SessionPayload;
 }
 
-const app = express();
+export const app = express();
 app.set('trust proxy', true);
 app.use(express.json({ limit: '1mb' }));
 
@@ -339,6 +339,85 @@ app.post('/api/public/proposals/:shareToken/respond', (req, res) => {
   res.json({ ok: true, status: proposal.status });
 });
 
+// Public Contact Forms connected to active automations
+app.get('/api/public/forms/:slug', (req, res) => {
+  const db = store.getState();
+  const slug = sanitizeText(req.params.slug, 100);
+  const automation = db.automations.find((a) => a.webhookSlug === slug);
+  if (!automation) {
+    res.status(404).json({ error: 'Formulario de contacto no encontrado.' });
+    return;
+  }
+  const client = db.clients.find((c) => c.id === automation.clientId);
+  const triggerStep = automation.steps.find((s) => s.type === 'trigger');
+  res.json({
+    form: {
+      slug: automation.webhookSlug,
+      title: automation.name,
+      description: automation.description,
+      businessName: client?.businessName || 'JairRestaura Automatiza IA',
+      sector: automation.sector,
+      active: automation.status === 'active',
+      requiredFields: triggerStep?.requiredFields || ['nombre', 'telefono'],
+      isDemo: automation.isDemo,
+    },
+  });
+});
+
+app.post('/api/public/forms/:slug', async (req, res) => {
+  const db = store.getState();
+  const slug = sanitizeText(req.params.slug, 100);
+  const automation = db.automations.find((a) => a.webhookSlug === slug);
+  if (!automation) {
+    res.status(404).json({ error: 'Formulario de contacto no encontrado.' });
+    return;
+  }
+
+  const habeasDataConsent = Boolean(req.body?.habeasDataConsent);
+  if (!habeasDataConsent) {
+    res.status(400).json({
+      error: 'Debes autorizar el tratamiento de datos personales (Ley 1581 de 2012) para enviar el formulario.',
+    });
+    return;
+  }
+
+  const nombre = sanitizeText(req.body?.nombre, 120);
+  const correo = sanitizeText(req.body?.correo, 120);
+  const telefono = sanitizeText(req.body?.telefono, 40);
+  const mensaje = sanitizeText(req.body?.mensaje, 600);
+  const peticion = sanitizeText(req.body?.peticion, 600);
+
+  const payload: Record<string, unknown> = {
+    ...(nombre ? { nombre } : {}),
+    ...(correo ? { correo } : {}),
+    ...(telefono ? { telefono } : {}),
+    ...(mensaje ? { mensaje } : {}),
+    ...(peticion ? { peticion } : {}),
+    habeasDataConsent: true,
+  };
+
+  const execution = await runAutomationExecution(
+    automation,
+    payload,
+    'live',
+    `Formulario de Contacto (/api/public/forms/${slug})`,
+  );
+
+  if (execution.status !== 'success') {
+    res.status(422).json({
+      error: execution.errorMessage || 'No se pudo procesar el formulario en este momento.',
+      execution,
+    });
+    return;
+  }
+
+  res.status(201).json({
+    ok: true,
+    message: 'Tu solicitud fue recibida y procesada correctamente.',
+    executionId: execution.id,
+  });
+});
+
 // Real incoming webhook trigger endpoint for active automations
 app.post('/api/hooks/:slug', async (req, res) => {
   const db = store.getState();
@@ -483,17 +562,32 @@ app.get('/api/admin/overview', requireAdmin, (_req, res) => {
     });
   }
 
+  const realClientsList = db.clients.filter((c) => !c.isDemo);
+  const demoClientsList = db.clients.filter((c) => Boolean(c.isDemo));
+  const verifiedPayments = db.payments.filter((p) => p.status === 'verificado' && p.providerVerified);
+  const realRevenueCop = verifiedPayments
+    .filter((p) => !p.isDemo)
+    .reduce((acc, p) => acc + (p.currency === 'USD' ? p.amount * 4000 : p.amount), 0);
+  const demoRevenueCop = verifiedPayments
+    .filter((p) => Boolean(p.isDemo))
+    .reduce((acc, p) => acc + (p.currency === 'USD' ? p.amount * 4000 : p.amount), 0);
+
   const summary: OperationsSummary = {
     totalClients: db.clients.length,
+    realClients: realClientsList.length,
+    demoClients: demoClientsList.length,
     totalAutomations: db.automations.length,
+    realAutomations: db.automations.filter((a) => !a.isDemo).length,
     activeAutomations: db.automations.filter((a) => a.status === 'active').length,
     totalExecutions: db.executions.length,
+    realExecutions: db.executions.filter((e) => !e.isDemo).length,
     detectedErrors: db.executions.filter((e) => e.status === 'error').length,
     proposalsSent: db.proposals.filter((p) => p.status === 'enviada' || p.status === 'aceptada').length,
     proposalsAccepted: db.proposals.filter((p) => p.status === 'aceptada').length,
-    verifiedRevenueCop: db.payments
-      .filter((p) => p.status === 'verificado' && p.providerVerified)
-      .reduce((acc, p) => acc + (p.currency === 'USD' ? p.amount * 4000 : p.amount), 0),
+    verifiedRevenueCop: realRevenueCop,
+    realRevenueCop,
+    demoRevenueCop,
+    capturedLeadsCount: db.crmCapturedLeads.length,
     pendingServicesCount:
       db.clients.filter((c) => c.commercialStatus === 'Propuesta enviada' || c.commercialStatus === 'Prospecto')
         .length + openSupport.length,
@@ -1233,6 +1327,78 @@ app.post('/api/admin/connectors/:key/verify', requireAdmin, async (req, res) => 
   }
 });
 
+app.post('/api/admin/connectors/telegram/test-message', requireAdmin, async (req, res) => {
+  const db = store.getState();
+  const tg = db.connectors.find((c) => c.key === 'telegram');
+  if (!tg || tg.status !== 'verified') {
+    res.status(422).json({ error: 'Verifica primero las credenciales del bot de Telegram.' });
+    return;
+  }
+  const encryptedBucket = db.connectorEncryptedSecrets['telegram'] || {};
+  const { decryptSecret } = await import('./server/crypto.ts');
+  const botToken = encryptedBucket.botToken
+    ? decryptSecret(encryptedBucket.botToken)
+    : process.env.TELEGRAM_BOT_TOKEN?.trim() || '';
+  const chatId = encryptedBucket.defaultChatId
+    ? decryptSecret(encryptedBucket.defaultChatId)
+    : process.env.TELEGRAM_CHAT_ID?.trim() || '';
+
+  if (!botToken || !chatId) {
+    res.status(422).json({ error: 'Faltan botToken o defaultChatId configurados.' });
+    return;
+  }
+
+  const customText = sanitizeText(req.body?.message, 300);
+  const text =
+    customText ||
+    'JAIRRESTAURA AUTOMATIZA IA: Conexión segura de Telegram Bot API verificada correctamente.';
+
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${encodeURIComponent(botToken)}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text }),
+      signal: AbortSignal.timeout(6000),
+    });
+    const data = (await resp.json().catch(() => ({}))) as {
+      ok?: boolean;
+      description?: string;
+      result?: { message_id?: number };
+    };
+    if (!resp.ok || !data.ok) {
+      res.status(422).json({ error: data.description || `Telegram respondió HTTP ${resp.status}.` });
+      return;
+    }
+    store.addAudit({
+      actorRole: 'admin',
+      actorLabel: 'Jair (Admin)',
+      action: 'TELEGRAM_MENSAJE_VERIFICADO',
+      targetType: 'conector',
+      targetId: 'telegram',
+      detail: `Mensaje real enviado a Telegram (message_id: ${data.result?.message_id ?? 'ok'}).`,
+    });
+    res.json({ ok: true, messageId: data.result?.message_id });
+  } catch (err) {
+    res.status(502).json({
+      error: err instanceof Error ? err.message : 'Error de red enviando mensaje a Telegram.',
+    });
+  }
+});
+
+app.get('/api/admin/leads', requireAdmin, (_req, res) => {
+  const db = store.getState();
+  const leads = db.crmCapturedLeads.map((lead) => {
+    const auto = db.automations.find((a) => a.id === lead.automationId);
+    const client = db.clients.find((c) => c.id === lead.clientId);
+    return {
+      ...lead,
+      automationName: auto?.name || lead.automationId,
+      businessName: client?.businessName || lead.clientId,
+    };
+  });
+  res.json({ leads });
+});
+
 app.get('/api/admin/executions', requireAdmin, (_req, res) => {
   const db = store.getState();
   res.json({ executions: db.executions, capturedLeadsCount: db.crmCapturedLeads.length });
@@ -1636,13 +1802,18 @@ app.post('/api/portal/arco', requireAuth, (req: AuthedRequest, res) => {
   res.status(201).json({ arco });
 });
 
+// Explicit JSON 404 for unknown /api/* routes (never fall through to SPA HTML)
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'Endpoint API no encontrado.' });
+});
+
 // ---------- VITE / STATIC FRONTEND SERVER ----------
 
 async function startServer() {
   const port = Number(process.env.PORT) || 3000;
   const isProd = process.env.NODE_ENV === 'production';
 
-  if (!isProd) {
+  if (!isProd && !process.env.VERCEL) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1662,9 +1833,21 @@ async function startServer() {
     });
   }
 
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`JAIRRESTAURA AUTOMATIZA IA activo en http://0.0.0.0:${port}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`JAIRRESTAURA AUTOMATIZA IA activo en http://0.0.0.0:${port}`);
+    });
+  }
 }
 
-startServer();
+const isMainEntry =
+  typeof process !== 'undefined' &&
+  Array.isArray(process.argv) &&
+  Boolean(process.argv[1]) &&
+  (process.argv[1].endsWith('server.ts') || process.argv[1].endsWith('server.js'));
+
+if (!process.env.VERCEL && isMainEntry) {
+  startServer();
+}
+
+export default app;

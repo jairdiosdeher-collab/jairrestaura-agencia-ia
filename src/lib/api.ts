@@ -47,7 +47,9 @@ export async function apiFetch<T = unknown>(
     const msg =
       typeof payload.error === 'string'
         ? payload.error
-        : `Error de solicitud (HTTP ${response.status})`;
+        : response.status === 404 && !contentType.includes('application/json')
+          ? 'El backend /api no está respondiendo en este despliegue (HTTP 404).'
+          : `Error de solicitud (HTTP ${response.status})`;
     throw new ApiError(msg, response.status, payload);
   }
 

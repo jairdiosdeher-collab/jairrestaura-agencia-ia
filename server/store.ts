@@ -46,7 +46,10 @@ export interface PersistedDatabase {
   }>;
 }
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
+const DATA_DIR =
+  process.env.VERCEL === '1'
+    ? path.resolve('/tmp', 'jairrestaura-data')
+    : path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'jairrestaura-db.json');
 
 function createInitialDemoState(): PersistedDatabase {

@@ -257,13 +257,20 @@ export interface AuthSession {
 
 export interface OperationsSummary {
   totalClients: number;
+  realClients: number;
+  demoClients: number;
   totalAutomations: number;
+  realAutomations: number;
   activeAutomations: number;
   totalExecutions: number;
+  realExecutions: number;
   detectedErrors: number;
   proposalsSent: number;
   proposalsAccepted: number;
   verifiedRevenueCop: number;
+  realRevenueCop: number;
+  demoRevenueCop: number;
+  capturedLeadsCount: number;
   pendingServicesCount: number;
   maintenanceAlerts: Array<{
     id: string;
