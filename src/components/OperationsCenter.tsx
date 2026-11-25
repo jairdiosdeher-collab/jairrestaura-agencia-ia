@@ -158,6 +158,22 @@ export function OperationsCenter({
         </div>
       )}
 
+      {summary.persistenceMode === 'vercel_ephemeral_tmp' && (
+        <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="text-xs text-amber-900 dark:text-amber-200">
+            <span className="font-semibold">Persistencia temporal en Vercel (/tmp):</span> Sin base externa conectada, los cambios guardados en Vercel pueden reiniciarse entre instancias frías. Para persistencia gratuita permanente configura{' '}
+            <span className="font-mono">KV_REST_API_URL</span> y <span className="font-mono">KV_REST_API_TOKEN</span> (Upstash Redis / Vercel KV).
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('seguridad')}
+            className="text-xs font-semibold text-amber-900 dark:text-amber-200 underline whitespace-nowrap self-start sm:self-auto"
+          >
+            Ver respaldo y seguridad
+          </button>
+        </div>
+      )}
+
       {/* 10 KPI Grid with tabular numerals */}
       <section aria-label="Indicadores operativos" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {kpis.map((kpi) => {

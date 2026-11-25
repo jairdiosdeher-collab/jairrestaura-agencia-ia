@@ -39,6 +39,8 @@ export interface WorkflowStep {
   connectorKey: ConnectorKey;
   configSummary: string;
   requiredFields?: string[];
+  dependsOnOrder?: number;
+  conditionRule?: string;
 }
 
 export interface AIExplanation {
@@ -58,6 +60,12 @@ export interface Automation {
   sector: string;
   templateId?: string;
   status: AutomationStatus;
+  version?: number;
+  goal?: string;
+  inputs?: string[];
+  outputs?: string[];
+  missingInfo?: string[];
+  lastEditedBy?: string;
   clientCanToggle: boolean;
   webhookSlug: string;
   steps: WorkflowStep[];
@@ -150,6 +158,7 @@ export interface ExecutionStepTrace {
   title: string;
   connectorKey: ConnectorKey;
   status: 'ok' | 'skipped' | 'error';
+  connectorMode?: 'simulado' | 'real_local' | 'real_externo';
   detail: string;
   durationMs: number;
 }
@@ -159,6 +168,10 @@ export interface ExecutionLog {
   automationId: string;
   automationName: string;
   clientId: string;
+  clientName?: string;
+  automationVersion?: number;
+  actorLabel?: string;
+  isSimulated?: boolean;
   mode: 'test' | 'live';
   status: 'success' | 'error';
   triggerSource: string;
@@ -233,6 +246,9 @@ export interface AuditLogEntry {
   action: string;
   targetType: string;
   targetId: string;
+  clientId?: string;
+  clientName?: string;
+  version?: number;
   detail: string;
   createdAt: string;
 }
@@ -272,6 +288,7 @@ export interface OperationsSummary {
   demoRevenueCop: number;
   capturedLeadsCount: number;
   pendingServicesCount: number;
+  persistenceMode?: 'local_json' | 'vercel_ephemeral_tmp' | 'upstash_kv_rest';
   maintenanceAlerts: Array<{
     id: string;
     severity: 'warning' | 'error';

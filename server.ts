@@ -46,6 +46,12 @@ app.use((_req, res, next) => {
   next();
 });
 
+// Hydrate external free KV persistence once per serverless cold start when configured
+app.use('/api', async (_req, _res, next) => {
+  await store.ensureHydrated();
+  next();
+});
+
 function extractBearer(req: Request): string | null {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) return null;
@@ -88,6 +94,7 @@ app.get('/api/health', (_req, res) => {
     ok: true,
     service: 'JAIRRESTAURA AUTOMATIZA IA',
     aiConfigured: isGeminiConfigured(),
+    persistenceMode: store.getPersistenceMode(),
     timestamp: new Date().toISOString(),
   });
 });
@@ -591,6 +598,7 @@ app.get('/api/admin/overview', requireAdmin, (_req, res) => {
     pendingServicesCount:
       db.clients.filter((c) => c.commercialStatus === 'Propuesta enviada' || c.commercialStatus === 'Prospecto')
         .length + openSupport.length,
+    persistenceMode: store.getPersistenceMode(),
     maintenanceAlerts,
   };
 
@@ -727,7 +735,7 @@ app.get('/api/admin/automations', requireAdmin, (_req, res) => {
   res.json({ automations: list });
 });
 
-app.post('/api/admin/automations', requireAdmin, (req, res) => {
+app.post('/api/admin/automations', requireAdmin, (req: AuthedRequest, res) => {
   const db = store.getState();
   const clientId = sanitizeText(req.body?.clientId, 80);
   const client = db.clients.find((c) => c.id === clientId);
@@ -754,6 +762,7 @@ app.post('/api/admin/automations', requireAdmin, (req, res) => {
     .slice(0, 32);
 
   const now = new Date().toISOString();
+  const actor = req.user?.displayName || 'Jair (Admin)';
   const newAuto: Automation = {
     id: `auto-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     clientId,
@@ -762,6 +771,18 @@ app.post('/api/admin/automations', requireAdmin, (req, res) => {
     sector,
     templateId: sanitizeText(req.body?.templateId, 80) || undefined,
     status: 'draft', // Always starts in draft until validated & activated
+    version: 1,
+    goal: sanitizeText(req.body?.goal, 280) || undefined,
+    inputs: Array.isArray(req.body?.inputs)
+      ? req.body.inputs.map((x: unknown) => sanitizeText(x, 80)).filter(Boolean)
+      : undefined,
+    outputs: Array.isArray(req.body?.outputs)
+      ? req.body.outputs.map((x: unknown) => sanitizeText(x, 80)).filter(Boolean)
+      : undefined,
+    missingInfo: Array.isArray(req.body?.missingInfo)
+      ? req.body.missingInfo.map((x: unknown) => sanitizeText(x, 180)).filter(Boolean)
+      : undefined,
+    lastEditedBy: actor,
     clientCanToggle: Boolean(req.body?.clientCanToggle),
     webhookSlug: `${slugBase || 'flujo'}-${Math.random().toString(36).slice(2, 6)}`,
     steps: steps.map((s: Record<string, unknown>, idx: number) => ({
@@ -776,6 +797,13 @@ app.post('/api/admin/automations', requireAdmin, (req, res) => {
       description: sanitizeText(s.description, 240),
       connectorKey: (sanitizeText(s.connectorKey, 40) || 'internal_crm') as ConnectorKey,
       configSummary: sanitizeText(s.configSummary, 160) || 'Configuración estándar',
+      conditionRule: sanitizeText(s.conditionRule, 160) || undefined,
+      dependsOnOrder:
+        typeof s.dependsOnOrder === 'number' && s.dependsOnOrder >= 1 && s.dependsOnOrder <= idx
+          ? s.dependsOnOrder
+          : idx === 0
+            ? undefined
+            : idx,
       requiredFields: Array.isArray(s.requiredFields)
         ? s.requiredFields.map((f) => sanitizeText(f, 40)).filter(Boolean)
         : undefined,
@@ -798,11 +826,14 @@ app.post('/api/admin/automations', requireAdmin, (req, res) => {
   db.automations.unshift(newAuto);
   store.addAudit({
     actorRole: 'admin',
-    actorLabel: 'Jair (Admin)',
+    actorLabel: actor,
     action: 'CREAR_AUTOMATIZACION',
     targetType: 'automatizacion',
     targetId: newAuto.id,
-    detail: `Automatización "${newAuto.name}" creada para ${client.businessName} en estado Borrador.`,
+    clientId: client.id,
+    clientName: client.businessName,
+    version: 1,
+    detail: `Automatización "${newAuto.name}" (v1) creada para ${client.businessName} en estado Borrador.`,
   });
   store.commit();
 
@@ -814,7 +845,7 @@ app.post('/api/admin/automations', requireAdmin, (req, res) => {
   });
 });
 
-app.post('/api/admin/automations/:id/test', requireAdmin, async (req, res) => {
+app.post('/api/admin/automations/:id/test', requireAdmin, async (req: AuthedRequest, res) => {
   const db = store.getState();
   const auto = db.automations.find((a) => a.id === req.params.id);
   if (!auto) {
@@ -826,11 +857,18 @@ app.post('/api/admin/automations/:id/test', requireAdmin, async (req, res) => {
       ? (req.body.payload as Record<string, unknown>)
       : { nombre: 'Prueba de Validación', telefono: '+57 300 000 0000' };
 
-  const execution = await runAutomationExecution(auto, payload, 'test', 'Prueba manual desde Estudio');
+  const actor = req.user?.displayName || 'Jair (Admin)';
+  const execution = await runAutomationExecution(
+    auto,
+    payload,
+    'test',
+    'Laboratorio de Pruebas (Simulación)',
+    actor,
+  );
   res.json({ execution, validation: validateAutomationRequirements(auto, db.connectors) });
 });
 
-app.post('/api/admin/automations/:id/toggle', requireAdmin, (req, res) => {
+app.post('/api/admin/automations/:id/toggle', requireAdmin, (req: AuthedRequest, res) => {
   const db = store.getState();
   const auto = db.automations.find((a) => a.id === req.params.id);
   if (!auto) {
@@ -840,47 +878,172 @@ app.post('/api/admin/automations/:id/toggle', requireAdmin, (req, res) => {
   const desired = req.body?.status === 'active' ? 'active' : 'paused';
   const validation = validateAutomationRequirements(auto, db.connectors);
 
-  if (desired === 'active' && !validation.readyToActivate) {
-    res.status(409).json({
-      error: `No se puede activar todavía. Faltan integraciones verificadas: ${validation.missingConnectors
-        .map((m) => m.name)
-        .join(', ')}.`,
-      validation,
-    });
-    return;
+  if (desired === 'active') {
+    if (!auto.steps.length || auto.steps[0]?.type !== 'trigger') {
+      res.status(409).json({
+        error: 'El flujo debe comenzar con un paso de tipo Disparador inicial antes de activarse.',
+        validation,
+      });
+      return;
+    }
+    if (!validation.readyToActivate) {
+      res.status(409).json({
+        error: `No se puede activar todavía. Faltan integraciones verificadas: ${validation.missingConnectors
+          .map((m) => m.name)
+          .join(', ')}.`,
+        validation,
+      });
+      return;
+    }
+    if (req.body?.adminConfirmed === false) {
+      res.status(400).json({
+        error: 'Se requiere confirmación explícita del administrador para activar el flujo.',
+      });
+      return;
+    }
   }
 
+  const client = db.clients.find((c) => c.id === auto.clientId);
   auto.status = desired;
   auto.updatedAt = new Date().toISOString();
 
   store.addAudit({
     actorRole: 'admin',
-    actorLabel: 'Jair (Admin)',
+    actorLabel: req.user?.displayName || 'Jair (Admin)',
     action: desired === 'active' ? 'ACTIVAR_AUTOMATIZACION' : 'PAUSAR_AUTOMATIZACION',
     targetType: 'automatizacion',
     targetId: auto.id,
-    detail: `Estado cambiado a ${desired === 'active' ? 'Activa' : 'Pausada'}.`,
+    clientId: auto.clientId,
+    clientName: client?.businessName || auto.clientId,
+    version: auto.version || 1,
+    detail: `Estado cambiado a ${desired === 'active' ? 'Activa (confirmada)' : 'Pausada'} en versión v${auto.version || 1}.`,
   });
   store.commit();
   res.json({ automation: { ...auto, validation } });
 });
 
-app.patch('/api/admin/automations/:id', requireAdmin, (req, res) => {
+app.post('/api/admin/automations/:id/emergency-stop', requireAdmin, (req: AuthedRequest, res) => {
   const db = store.getState();
   const auto = db.automations.find((a) => a.id === req.params.id);
   if (!auto) {
     res.status(404).json({ error: 'Automatización no encontrada.' });
     return;
   }
+  const client = db.clients.find((c) => c.id === auto.clientId);
+  auto.status = 'paused';
+  auto.clientCanToggle = false;
+  auto.updatedAt = new Date().toISOString();
+
+  store.addAudit({
+    actorRole: 'admin',
+    actorLabel: req.user?.displayName || 'Jair (Admin)',
+    action: 'DESACTIVACION_EMERGENCIA',
+    targetType: 'automatizacion',
+    targetId: auto.id,
+    clientId: auto.clientId,
+    clientName: client?.businessName || auto.clientId,
+    version: auto.version || 1,
+    detail: `Desactivación de emergencia aplicada a "${auto.name}". Se pausó la ejecución y se bloqueó reactivación por cliente.`,
+  });
+  store.commit();
+  res.json({
+    automation: { ...auto, validation: validateAutomationRequirements(auto, db.connectors) },
+  });
+});
+
+app.patch('/api/admin/automations/:id', requireAdmin, (req: AuthedRequest, res) => {
+  const db = store.getState();
+  const auto = db.automations.find((a) => a.id === req.params.id);
+  if (!auto) {
+    res.status(404).json({ error: 'Automatización no encontrada.' });
+    return;
+  }
+  const client = db.clients.find((c) => c.id === auto.clientId);
+  const actor = req.user?.displayName || 'Jair (Admin)';
+  let structureEdited = false;
+
   if (typeof req.body?.clientCanToggle === 'boolean') {
     auto.clientCanToggle = req.body.clientCanToggle;
   }
   if (typeof req.body?.name === 'string' && req.body.name.trim()) {
     auto.name = sanitizeText(req.body.name, 140);
+    structureEdited = true;
   }
+  if (typeof req.body?.description === 'string') {
+    auto.description = sanitizeText(req.body.description, 400);
+    structureEdited = true;
+  }
+  if (typeof req.body?.sector === 'string' && req.body.sector.trim()) {
+    auto.sector = sanitizeText(req.body.sector, 80);
+  }
+  if (typeof req.body?.goal === 'string') {
+    auto.goal = sanitizeText(req.body.goal, 280);
+  }
+  if (Array.isArray(req.body?.inputs)) {
+    auto.inputs = req.body.inputs.map((x: unknown) => sanitizeText(x, 80)).filter(Boolean);
+  }
+  if (Array.isArray(req.body?.outputs)) {
+    auto.outputs = req.body.outputs.map((x: unknown) => sanitizeText(x, 80)).filter(Boolean);
+  }
+  if (Array.isArray(req.body?.missingInfo)) {
+    auto.missingInfo = req.body.missingInfo.map((x: unknown) => sanitizeText(x, 180)).filter(Boolean);
+  }
+  if (req.body?.explanation && typeof req.body.explanation === 'object') {
+    auto.explanation = req.body.explanation;
+  }
+  if (Array.isArray(req.body?.steps) && req.body.steps.length > 0) {
+    auto.steps = req.body.steps.map((s: Record<string, unknown>, idx: number) => ({
+      id: sanitizeText(s.id, 60) || `step-${Date.now()}-${idx + 1}`,
+      order: idx + 1,
+      type: (['trigger', 'ai_interpret', 'condition', 'action', 'crm_record', 'notification'].includes(
+        String(s.type),
+      )
+        ? s.type
+        : 'action') as Automation['steps'][number]['type'],
+      title: sanitizeText(s.title, 120) || `Paso ${idx + 1}`,
+      description: sanitizeText(s.description, 240),
+      connectorKey: (sanitizeText(s.connectorKey, 40) || 'internal_crm') as ConnectorKey,
+      configSummary: sanitizeText(s.configSummary, 160) || 'Configuración estándar',
+      conditionRule: sanitizeText(s.conditionRule, 160) || undefined,
+      dependsOnOrder:
+        typeof s.dependsOnOrder === 'number' && s.dependsOnOrder >= 1 && s.dependsOnOrder <= idx
+          ? s.dependsOnOrder
+          : idx === 0
+            ? undefined
+            : idx,
+      requiredFields: Array.isArray(s.requiredFields)
+        ? s.requiredFields.map((f) => sanitizeText(f, 40)).filter(Boolean)
+        : undefined,
+    }));
+    auto.version = (auto.version || 1) + 1;
+    // Editing flow structure pauses live flow until re-validated & confirmed
+    if (auto.status === 'active') {
+      auto.status = 'paused';
+    }
+    structureEdited = true;
+  }
+
+  auto.lastEditedBy = actor;
   auto.updatedAt = new Date().toISOString();
+
+  if (structureEdited) {
+    store.addAudit({
+      actorRole: 'admin',
+      actorLabel: actor,
+      action: 'EDITAR_FLUJO_AUTOMATIZACION',
+      targetType: 'automatizacion',
+      targetId: auto.id,
+      clientId: auto.clientId,
+      clientName: client?.businessName || auto.clientId,
+      version: auto.version || 1,
+      detail: `Flujo "${auto.name}" actualizado a versión v${auto.version || 1}.`,
+    });
+  }
+
   store.commit();
-  res.json({ automation: { ...auto, validation: validateAutomationRequirements(auto, db.connectors) } });
+  res.json({
+    automation: { ...auto, validation: validateAutomationRequirements(auto, db.connectors) },
+  });
 });
 
 // ---------- ADMIN: CRM CLIENTS ----------
@@ -1520,6 +1683,7 @@ app.get('/api/admin/security', requireAdmin, (_req, res) => {
     consentsCount: db.clients.filter((c) => c.habeasDataConsent).length,
     totalClients: db.clients.length,
     envPasscodeActive: isEnvAdminPasscodeSet(),
+    persistenceMode: store.getPersistenceMode(),
   });
 });
 

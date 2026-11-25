@@ -512,12 +512,72 @@ function createInitialDemoState(): PersistedDatabase {
   };
 }
 
+const KV_REST_URL = (process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '').trim();
+const KV_REST_TOKEN = (process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '').trim();
+const KV_STATE_KEY = 'jairrestaura_automatiza_db_v1';
+
 class StoreManager {
   private db: PersistedDatabase;
   private persistEnabled = true;
+  private hydratedFromRemote = false;
 
   constructor() {
     this.db = this.loadFromDisk();
+  }
+
+  public getPersistenceMode(): 'local_json' | 'vercel_ephemeral_tmp' | 'upstash_kv_rest' {
+    if (KV_REST_URL && KV_REST_TOKEN) return 'upstash_kv_rest';
+    if (process.env.VERCEL === '1') return 'vercel_ephemeral_tmp';
+    return 'local_json';
+  }
+
+  public async ensureHydrated(): Promise<void> {
+    if (this.hydratedFromRemote || !KV_REST_URL || !KV_REST_TOKEN) return;
+    try {
+      const resp = await fetch(`${KV_REST_URL.replace(/\/$/, '')}/get/${KV_STATE_KEY}`, {
+        headers: { Authorization: `Bearer ${KV_REST_TOKEN}` },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (resp.ok) {
+        const body = (await resp.json()) as { result?: string | null };
+        if (typeof body.result === 'string' && body.result.trim().startsWith('{')) {
+          const parsed = JSON.parse(body.result) as PersistedDatabase;
+          if (Array.isArray(parsed.clients) && Array.isArray(parsed.automations)) {
+            const existingKeys = new Set((parsed.connectors || []).map((c) => c.key));
+            for (const def of DEFAULT_CONNECTORS) {
+              if (!existingKeys.has(def.key)) {
+                parsed.connectors.push({ ...def });
+              }
+            }
+            this.db = parsed;
+            this.saveToDisk(this.db);
+          }
+        } else {
+          // Initialize remote store once when empty
+          await this.saveToRemoteKv(this.db);
+        }
+      }
+      this.hydratedFromRemote = true;
+    } catch (err) {
+      console.warn('[Store] No se pudo hidratar desde KV REST externo; usando respaldo local:', err);
+    }
+  }
+
+  private async saveToRemoteKv(data: PersistedDatabase): Promise<void> {
+    if (!KV_REST_URL || !KV_REST_TOKEN) return;
+    try {
+      await fetch(`${KV_REST_URL.replace(/\/$/, '')}/set/${KV_STATE_KEY}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${KV_REST_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(JSON.stringify(data)),
+        signal: AbortSignal.timeout(4000),
+      });
+    } catch (err) {
+      console.warn('[Store] Error sincronizando copia en KV REST externo:', err);
+    }
   }
 
   private loadFromDisk(): PersistedDatabase {
@@ -570,6 +630,9 @@ class StoreManager {
 
   public commit(): void {
     this.saveToDisk(this.db);
+    if (KV_REST_URL && KV_REST_TOKEN) {
+      void this.saveToRemoteKv(this.db);
+    }
   }
 
   public addAudit(entry: Omit<AuditLogEntry, 'id' | 'createdAt'>): AuditLogEntry {

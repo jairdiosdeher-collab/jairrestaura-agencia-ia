@@ -155,12 +155,12 @@ export function EngineAndConnectors({
             const isEditing = editingKey === conn.key;
 
             const statusLabel = isVerified
-              ? 'Conectada y verificada'
+              ? 'VERIFICADA'
               : isError
-                ? 'Error'
+                ? 'ERROR'
                 : hasSavedFields
-                  ? 'Pendiente de verificación'
-                  : 'No configurada';
+                  ? 'CONFIGURADA'
+                  : 'NO CONFIGURADA';
 
             return (
               <div
@@ -339,14 +339,23 @@ export function EngineAndConnectors({
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-white">
-                          {ex.automationName} ·{' '}
+                          {ex.automationName}{' '}
+                          <span className="font-mono text-[11px] text-slate-500">
+                            v{ex.automationVersion || 1}
+                          </span>{' '}
+                          ·{' '}
                           <span className="font-normal text-slate-500">
-                            {ex.mode === 'test' ? 'Prueba de validación' : 'Ejecución real'}
+                            {ex.mode === 'test' || ex.isSimulated
+                              ? 'Simulación controlada (sin envíos externos)'
+                              : 'Ejecución real'}
+                            {ex.clientName ? ` · ${ex.clientName}` : ''}
                             {ex.isDemo ? ' · Demo' : ''}
                           </span>
                         </p>
                         <p className="text-slate-500 dark:text-slate-400">
-                          {ex.triggerSource} · {formatDateTime(ex.createdAt)}
+                          {ex.triggerSource}
+                          {ex.actorLabel ? ` · Responsable: ${ex.actorLabel}` : ''} ·{' '}
+                          {formatDateTime(ex.createdAt)}
                         </p>
                       </div>
 
@@ -380,21 +389,42 @@ export function EngineAndConnectors({
                     {expanded && (
                       <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
                         <p>
-                          <span className="font-semibold">Entrada:</span> {ex.inputSummary}
+                          <span className="font-semibold">Entrada (protegida Ley 1581):</span> {ex.inputSummary}
                         </p>
                         <p>
                           <span className="font-semibold">Salida:</span> {ex.outputSummary}
                         </p>
                         {ex.stepTraces.length > 0 && (
                           <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
-                            {ex.stepTraces.map((tr) => (
-                              <div key={tr.stepId} className="flex justify-between gap-2 text-[11px]">
-                                <span>
-                                  {tr.title} ({tr.connectorKey}): {tr.detail}
-                                </span>
-                                <span className="font-mono shrink-0">{tr.durationMs} ms</span>
-                              </div>
-                            ))}
+                            {ex.stepTraces.map((tr) => {
+                              const modeLabel =
+                                tr.connectorMode === 'simulado'
+                                  ? 'Simulado'
+                                  : tr.connectorMode === 'real_externo'
+                                    ? 'Real externo'
+                                    : tr.connectorMode === 'real_local'
+                                      ? 'Motor local'
+                                      : ex.mode === 'test'
+                                        ? 'Simulado'
+                                        : 'Motor';
+                              return (
+                                <div key={tr.stepId} className="flex justify-between gap-2 text-[11px]">
+                                  <span>
+                                    <span
+                                      className={`font-semibold mr-1.5 ${
+                                        tr.status === 'ok'
+                                          ? 'text-emerald-700 dark:text-emerald-400'
+                                          : 'text-red-600 dark:text-red-400'
+                                      }`}
+                                    >
+                                      [{tr.status === 'ok' ? 'OK' : 'ERROR'}]
+                                    </span>
+                                    {tr.title} ({tr.connectorKey} · {modeLabel}): {tr.detail}
+                                  </span>
+                                  <span className="font-mono tabular-nums shrink-0">{tr.durationMs} ms</span>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

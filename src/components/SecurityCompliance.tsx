@@ -13,6 +13,9 @@ export function SecurityCompliance({ clients, onRefresh }: SecurityCompliancePro
   const [arcoRequests, setArcoRequests] = useState<ArcoRequest[]>([]);
   const [consentsCount, setConsentsCount] = useState(0);
   const [envPasscodeActive, setEnvPasscodeActive] = useState(false);
+  const [persistenceMode, setPersistenceMode] = useState<
+    'local_json' | 'vercel_ephemeral_tmp' | 'upstash_kv_rest'
+  >('local_json');
 
   const [arcoClientId, setArcoClientId] = useState(clients[0]?.id || '');
   const [rightType, setRightType] = useState<ArcoRequest['rightType']>('Acceso');
@@ -26,11 +29,13 @@ export function SecurityCompliance({ clients, onRefresh }: SecurityCompliancePro
         arcoRequests: ArcoRequest[];
         consentsCount: number;
         envPasscodeActive: boolean;
+        persistenceMode?: 'local_json' | 'vercel_ephemeral_tmp' | 'upstash_kv_rest';
       }>('/api/admin/security');
       setAuditLogs(res.auditLogs);
       setArcoRequests(res.arcoRequests);
       setConsentsCount(res.consentsCount);
       setEnvPasscodeActive(res.envPasscodeActive);
+      if (res.persistenceMode) setPersistenceMode(res.persistenceMode);
     } catch {
       // handled silently
     }
@@ -88,6 +93,13 @@ export function SecurityCompliance({ clients, onRefresh }: SecurityCompliancePro
     await loadSecurity();
   }
 
+  const persistenceLabel =
+    persistenceMode === 'upstash_kv_rest'
+      ? 'Base externa KV REST conectada (persistente en Vercel)'
+      : persistenceMode === 'vercel_ephemeral_tmp'
+        ? 'Almacenamiento temporal /tmp en Vercel (requiere KV REST gratuito para persistencia permanente)'
+        : 'Archivo JSON local en servidor (data/jairrestaura-db.json)';
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -143,10 +155,13 @@ export function SecurityCompliance({ clients, onRefresh }: SecurityCompliancePro
 
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
           <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
-            Cifrado y Webhooks Seguros
+            Cifrado y Persistencia
           </p>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-            Las credenciales de conectores se cifran en servidor con AES-256-GCM y nunca se exponen en el navegador. Los webhooks validan firma HMAC y bloquean direcciones privadas (SSRF).
+            Credenciales cifradas en servidor con AES-256-GCM y webhooks firmados HMAC con bloqueo SSRF.
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Modo de datos: {persistenceLabel}
           </p>
         </div>
 
@@ -246,6 +261,8 @@ export function SecurityCompliance({ clients, onRefresh }: SecurityCompliancePro
                 <div>
                   <p className="font-semibold text-slate-800 dark:text-slate-200">
                     {log.actorLabel} · <span className="font-mono text-[11px]">{log.action}</span>
+                    {log.clientName ? ` · ${log.clientName}` : ''}
+                    {typeof log.version === 'number' ? ` · v${log.version}` : ''}
                   </p>
                   <p className="text-slate-600 dark:text-slate-400">{log.detail}</p>
                 </div>

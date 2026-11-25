@@ -69,11 +69,13 @@ export async function runAutomationExecution(
   rawPayload: Record<string, unknown>,
   mode: 'test' | 'live',
   triggerSource: string,
+  actorLabel = mode === 'test' ? 'Laboratorio de Pruebas' : 'Motor de Ejecución',
 ): Promise<ExecutionLog> {
   const db = store.getState();
   const startedAt = Date.now();
   const traces: ExecutionStepTrace[] = [];
   let failedMessage: string | undefined;
+  const client = db.clients.find((c) => c.id === automation.clientId);
 
   // Enforce strict live execution rules: no silent fake live runs
   if (mode === 'live' && automation.status !== 'active') {
@@ -82,6 +84,10 @@ export async function runAutomationExecution(
       automationId: automation.id,
       automationName: automation.name,
       clientId: automation.clientId,
+      clientName: client?.businessName || automation.clientId,
+      automationVersion: automation.version || 1,
+      actorLabel,
+      isSimulated: false,
       mode: 'live',
       status: 'error',
       triggerSource,
@@ -104,7 +110,7 @@ export async function runAutomationExecution(
     const stepStart = Date.now();
     const connector = db.connectors.find((c) => c.key === step.connectorKey);
 
-    // 1. Validate required fields on trigger step
+    // 1. Validate required fields & data formats on trigger / condition steps
     if (step.type === 'trigger' && step.requiredFields && step.requiredFields.length > 0) {
       const missingFields = step.requiredFields.filter((f) => {
         const val = rawPayload[f];
@@ -117,6 +123,7 @@ export async function runAutomationExecution(
           title: step.title,
           connectorKey: step.connectorKey,
           status: 'error',
+          connectorMode: mode === 'test' ? 'simulado' : 'real_local',
           detail: msg,
           durationMs: Math.max(1, Date.now() - stepStart),
         });
@@ -125,17 +132,74 @@ export async function runAutomationExecution(
       }
     }
 
+    // Format validation for email / phone in both test & live modes
+    const rawEmail = rawPayload.correo ?? rawPayload.email;
+    if (typeof rawEmail === 'string' && rawEmail.trim().length > 0) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail.trim())) {
+        const msg = 'El campo de correo electrónico no tiene un formato válido.';
+        traces.push({
+          stepId: step.id,
+          title: step.title,
+          connectorKey: step.connectorKey,
+          status: 'error',
+          connectorMode: mode === 'test' ? 'simulado' : 'real_local',
+          detail: msg,
+          durationMs: Math.max(1, Date.now() - stepStart),
+        });
+        failedMessage = msg;
+        break;
+      }
+    }
+
+    const rawPhone = rawPayload.telefono ?? rawPayload.phone;
+    if (typeof rawPhone === 'string' && rawPhone.trim().length > 0) {
+      const digits = rawPhone.replace(/\D/g, '');
+      if (digits.length < 7) {
+        const msg = 'El número de teléfono debe incluir al menos 7 dígitos válidos.';
+        traces.push({
+          stepId: step.id,
+          title: step.title,
+          connectorKey: step.connectorKey,
+          status: 'error',
+          connectorMode: mode === 'test' ? 'simulado' : 'real_local',
+          detail: msg,
+          durationMs: Math.max(1, Date.now() - stepStart),
+        });
+        failedMessage = msg;
+        break;
+      }
+    }
+
+    if (step.type === 'condition') {
+      traces.push({
+        stepId: step.id,
+        title: step.title,
+        connectorKey: step.connectorKey,
+        status: 'ok',
+        connectorMode: mode === 'test' ? 'simulado' : 'real_local',
+        detail:
+          mode === 'test'
+            ? `Condición evaluada en simulación: ${step.conditionRule || step.configSummary}.`
+            : `Condición verificada: ${step.conditionRule || step.configSummary}.`,
+        durationMs: Math.max(1, Date.now() - stepStart),
+      });
+      continue;
+    }
+
     // 2. Check connector verification
     if (!connector || connector.status !== 'verified') {
       const reason =
         connector?.status === 'error'
           ? connector.lastError || 'Error en conector.'
-          : `Conector ${connector?.name || step.connectorKey} está en estado Pendiente de configuración.`;
+          : Object.keys(connector?.maskedValues || {}).length > 0
+            ? `Conector ${connector?.name || step.connectorKey} está CONFIGURADO pero aún sin verificación real.`
+            : `Conector ${connector?.name || step.connectorKey} está NO CONFIGURADO.`;
       traces.push({
         stepId: step.id,
         title: step.title,
         connectorKey: step.connectorKey,
         status: 'error',
+        connectorMode: mode === 'test' ? 'simulado' : 'real_externo',
         detail: reason,
         durationMs: Math.max(1, Date.now() - stepStart),
       });
@@ -143,7 +207,7 @@ export async function runAutomationExecution(
       break;
     }
 
-    // 3. Execute local verifiable actions or outbound safe HTTP calls
+    // 3. Execute local verifiable actions or outbound safe HTTP calls (NEVER send external messages in test mode!)
     if (step.connectorKey === 'internal_crm') {
       if (mode === 'live') {
         db.crmCapturedLeads.unshift({
@@ -159,10 +223,11 @@ export async function runAutomationExecution(
         title: step.title,
         connectorKey: step.connectorKey,
         status: 'ok',
+        connectorMode: mode === 'test' ? 'simulado' : 'real_local',
         detail:
           mode === 'live'
             ? 'Registro guardado en el CRM local verificado para este cliente.'
-            : 'Validación de escritura en CRM superada (modo prueba, sin alterar registros reales).',
+            : 'Simulación de escritura en CRM superada (sin modificar registros reales).',
         durationMs: Math.max(2, Date.now() - stepStart),
       });
       continue;
@@ -174,7 +239,11 @@ export async function runAutomationExecution(
         title: step.title,
         connectorKey: step.connectorKey,
         status: 'ok',
-        detail: 'Carga útil validada y sanitizada según esquema del formulario.',
+        connectorMode: mode === 'test' ? 'simulado' : 'real_local',
+        detail:
+          mode === 'test'
+            ? 'Esquema de formulario validado (simulación controlada).'
+            : 'Carga útil validada y sanitizada según esquema del formulario.',
         durationMs: Math.max(2, Date.now() - stepStart),
       });
       continue;
@@ -191,6 +260,7 @@ export async function runAutomationExecution(
             title: step.title,
             connectorKey: step.connectorKey,
             status: 'error',
+            connectorMode: mode === 'test' ? 'simulado' : 'real_externo',
             detail: failedMessage,
             durationMs: Math.max(1, Date.now() - stepStart),
           });
@@ -218,6 +288,7 @@ export async function runAutomationExecution(
               title: step.title,
               connectorKey: step.connectorKey,
               status: 'error',
+              connectorMode: 'real_externo',
               detail: failedMessage,
               durationMs: Math.max(1, Date.now() - stepStart),
             });
@@ -230,10 +301,11 @@ export async function runAutomationExecution(
         title: step.title,
         connectorKey: step.connectorKey,
         status: 'ok',
+        connectorMode: mode === 'test' ? 'simulado' : 'real_externo',
         detail:
           mode === 'live'
             ? 'Paso de webhook procesado con validación de seguridad.'
-            : 'Validación de firma y URL segura superada (modo prueba).',
+            : 'Simulación: validación de URL segura y firma superada (no se envió petición externa).',
         durationMs: Math.max(2, Date.now() - stepStart),
       });
       continue;
@@ -256,6 +328,7 @@ export async function runAutomationExecution(
           title: step.title,
           connectorKey: step.connectorKey,
           status: 'error',
+          connectorMode: mode === 'test' ? 'simulado' : 'real_externo',
           detail: failedMessage,
           durationMs: Math.max(1, Date.now() - stepStart),
         });
@@ -295,6 +368,7 @@ export async function runAutomationExecution(
             title: step.title,
             connectorKey: step.connectorKey,
             status: 'ok',
+            connectorMode: 'real_externo',
             detail: `Mensaje real enviado a Telegram (message_id: ${tgJson.result?.message_id ?? 'ok'}).`,
             durationMs: Math.max(3, Date.now() - stepStart),
           });
@@ -307,6 +381,7 @@ export async function runAutomationExecution(
             title: step.title,
             connectorKey: step.connectorKey,
             status: 'error',
+            connectorMode: 'real_externo',
             detail: failedMessage,
             durationMs: Math.max(1, Date.now() - stepStart),
           });
@@ -319,7 +394,9 @@ export async function runAutomationExecution(
         title: step.title,
         connectorKey: step.connectorKey,
         status: 'ok',
-        detail: 'Credenciales de Telegram verificadas y formato de mensaje validado (modo prueba).',
+        connectorMode: 'simulado',
+        detail:
+          'Simulación: credenciales de Telegram verificadas y formato de mensaje válido (no se envió mensaje externo).',
         durationMs: Math.max(3, Date.now() - stepStart),
       });
       continue;
@@ -331,10 +408,11 @@ export async function runAutomationExecution(
       title: step.title,
       connectorKey: step.connectorKey,
       status: 'ok',
+      connectorMode: mode === 'test' ? 'simulado' : 'real_externo',
       detail:
         mode === 'live'
           ? `Conector ${connector.name} verificado (despacho HTTP específico pendiente de Fase 2).`
-          : `Conector ${connector.name} verificado y listo para validación.`,
+          : `Simulación: conector ${connector.name} verificado (sin envío externo en prueba).`,
       durationMs: Math.max(3, Date.now() - stepStart),
     });
   }
@@ -348,6 +426,10 @@ export async function runAutomationExecution(
     automationId: automation.id,
     automationName: automation.name,
     clientId: automation.clientId,
+    clientName: client?.businessName || automation.clientId,
+    automationVersion: automation.version || 1,
+    actorLabel,
+    isSimulated: mode === 'test',
     mode,
     status: finalStatus,
     triggerSource,
@@ -355,7 +437,7 @@ export async function runAutomationExecution(
     outputSummary:
       finalStatus === 'success'
         ? mode === 'test'
-          ? `Prueba de validación completada (${traces.length}/${automation.steps.length} pasos verificados).`
+          ? `Simulación de prueba completada sin envíos externos (${traces.length}/${automation.steps.length} pasos validados).`
           : `Ejecución real completada (${traces.length}/${automation.steps.length} pasos).`
         : `Detenido con error: ${failedMessage}`,
     stepTraces: traces,
@@ -371,7 +453,6 @@ export async function runAutomationExecution(
   automation.lastRunAt = nowIso;
   automation.updatedAt = nowIso;
 
-  // Keep validation reference used
   if (!validation.readyToActivate && mode === 'live' && finalStatus === 'success') {
     log.status = 'error';
     log.errorMessage = 'Integraciones incompletas.';
@@ -385,11 +466,24 @@ export async function runAutomationExecution(
   return log;
 }
 
+function maskPiiValue(key: string, val: string): string {
+  const lower = key.toLowerCase();
+  const cleaned = sanitizeText(val, 50);
+  if (lower.includes('correo') || lower.includes('email')) {
+    const [u, d] = cleaned.split('@');
+    if (u && d) return `${u.slice(0, 2)}***@${d}`;
+  }
+  if (lower.includes('telefono') || lower.includes('phone')) {
+    if (cleaned.length >= 6) return `${cleaned.slice(0, 4)}***${cleaned.slice(-2)}`;
+  }
+  return cleaned;
+}
+
 function summarizePayload(payload: Record<string, unknown>): string {
   const entries = Object.entries(payload)
     .filter(([k]) => !k.toLowerCase().includes('token') && !k.toLowerCase().includes('secret'))
-    .slice(0, 4)
-    .map(([k, v]) => `${k}: ${sanitizeText(String(v), 40)}`);
+    .slice(0, 5)
+    .map(([k, v]) => `${k}: ${maskPiiValue(k, String(v))}`);
   return entries.length > 0 ? entries.join(' · ') : 'Carga vacía';
 }
 

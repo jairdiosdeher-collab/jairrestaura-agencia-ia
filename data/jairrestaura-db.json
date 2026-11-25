@@ -760,6 +760,16 @@
       "targetType": "cliente",
       "targetId": "cli-demo-1",
       "detail": "Acceso al Panel del Cliente para Clínica Bienestar Integral.",
+      "id": "aud-1795623998483-zy54",
+      "createdAt": "2026-11-25T16:26:38.483Z"
+    },
+    {
+      "actorRole": "client",
+      "actorLabel": "Clínica Bienestar Integral",
+      "action": "INICIO_SESION_CLIENTE",
+      "targetType": "cliente",
+      "targetId": "cli-demo-1",
+      "detail": "Acceso al Panel del Cliente para Clínica Bienestar Integral.",
       "id": "aud-1795621185204-3qec",
       "createdAt": "2026-11-25T15:39:45.204Z"
     },
